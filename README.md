@@ -1,3 +1,3 @@
 # DevopsOpgave
-Opgave til førstesemester devops lol haha
 ggggggggggggggggggggggg
+Opgave til første semester devops lol haha //Fixed spelling grammatical error!
