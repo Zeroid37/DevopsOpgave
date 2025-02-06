@@ -9,4 +9,4 @@ jobs:
       - name: Run a basic test
         run: echo "CI Pipeline Running!"
       - name: Run tests
-        run: echo "Lolhej"
+        run: run ./test_script.sh
