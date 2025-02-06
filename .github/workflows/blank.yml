@@ -9,4 +9,4 @@ jobs:
       - name: Run a basic test
         run: echo "CI Pipeline Running!"
       - name: Run tests
-        run: run ./test_script.sh
+        run: run ./.github/workflows/test_script.sh
