@@ -1,9 +1,13 @@
 name: Auto Merge and Deploy
 
 on:
-  pull_request:
+  workflow_run:
+    workflows:
+      - "Simple CI Pipeline"
+      - "Security Scan"
+      - "CodeQl Analysis"
     types:
-      - closed  # Trigger when PR is closed
+      - completed
 
 jobs:
   merge:
