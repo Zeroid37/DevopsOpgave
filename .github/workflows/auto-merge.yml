@@ -1,0 +1,61 @@
+name: Auto Merge and Deploy
+
+on:
+  pull_request:
+    types:
+      - closed  # Trigger when PR is closed
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true  # Ensure the PR was merged
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify all previous checks passed
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          REPO=${{ github.repository }}
+          STATUS=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/$REPO/pulls/$PR_NUMBER/check-runs" | jq -r '.check_runs[].conclusion')
+
+          echo "Checks Status: $STATUS"
+          if echo "$STATUS" | grep -v "success"; then
+            echo "Some checks have failed. Exiting..."
+            exit 1
+          fi
+
+      - name: Merge PR
+        run: |
+          gh pr merge $PR_NUMBER --auto --merge
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-and-push-ghcr:
+    needs: merge
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write  # Required to push to GitHub Packages
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build Docker image
+        run: |
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/my-app"
+          IMAGE_TAG="latest"
+          docker build -t $IMAGE_NAME:$IMAGE_TAG .
+
+      - name: Push Docker image to GitHub Packages
+        run: |
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/my-app"
+          IMAGE_TAG="latest"
+          docker push $IMAGE_NAME:$IMAGE_TAG
